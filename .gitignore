@@ -1,0 +1,24 @@
+# Environment
+.env
+.venv/
+venv/
+env/
+
+# ChromaDB persistent data
+chroma_data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+#for my learning pupose
+READING_LIST.md
