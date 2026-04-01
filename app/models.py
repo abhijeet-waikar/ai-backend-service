@@ -1,8 +1,5 @@
 """
 models.py - Request and Response schemas for the API.
-
-Uses Pydantic for automatic validation, serialization, and OpenAPI docs generation.
-Every endpoint has a clearly defined input/output contract.
 """
 
 from pydantic import BaseModel, Field

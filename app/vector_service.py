@@ -1,19 +1,3 @@
-"""
-vector_service.py - Document embedding and similarity search using ChromaDB.
-
-Key concepts demonstrated:
-1. Text embeddings - Converting text to numerical vectors that capture meaning
-2. Vector similarity search - Finding documents by semantic meaning, not keywords
-3. Collection management - CRUD operations on document collections
-4. Metadata filtering - Attaching and querying structured metadata alongside vectors
-5. Relevance scoring - Converting distance metrics to human-readable similarity scores
-
-ChromaDB was chosen because:
-- Runs locally (no cloud setup needed for development)
-- Handles embedding generation automatically via built-in models
-- Simple API that maps to production vector DBs (Pinecone, Weaviate, etc.)
-"""
-
 import logging
 import uuid
 from typing import Optional
@@ -31,30 +15,8 @@ COLLECTION_NAME = "documents"
 
 
 class VectorService:
-    """
-    Manages document storage and retrieval using vector embeddings.
-
-    How it works:
-    1. When you ADD a document, ChromaDB converts it to a vector (embedding)
-    2. When you SEARCH, your query is also converted to a vector
-    3. ChromaDB finds documents whose vectors are closest to your query vector
-    4. "Closest" means semantically similar, not keyword matching
-
-    Example:
-        Adding: "The payment was declined due to insufficient funds"
-        Searching: "transaction failed because of low balance"
-        Result: The document above is returned because the MEANING is similar,
-                even though the exact words are different.
-    """
 
     def __init__(self, persist_directory: Optional[str] = None):
-        """
-        Initialize ChromaDB client.
-
-        Args:
-            persist_directory: If provided, data persists to disk.
-                             If None, data is in-memory only (resets on restart).
-        """
         if persist_directory:
             self.client = chromadb.PersistentClient(path=persist_directory)
             logger.info(f"Vector DB initialized with persistence at: {persist_directory}")
