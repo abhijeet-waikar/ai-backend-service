@@ -1,14 +1,3 @@
-"""
-llm_service.py - OpenAI LLM integration with production-grade patterns.
-
-Key patterns demonstrated:
-1. Retry with exponential backoff (handles rate limits and transient errors)
-2. Streaming responses (for real-time UI updates and lower latency perception)
-3. Structured JSON output (reliable parsing of LLM responses)
-4. Token usage tracking (cost monitoring)
-5. Error classification (distinguishes retryable vs permanent failures)
-"""
-
 import json
 import logging
 from typing import AsyncGenerator
@@ -33,13 +22,8 @@ TEMPERATURE = 0.3  # Lower = more deterministic, better for structured output
 
 class LLMService:
     """
-    Handles all interactions with OpenAI's API.
-
-    Design decisions:
-    - Uses sync client (simpler, sufficient for most backend services)
-    - Retry logic handles transient failures automatically
-    - Structured output ensures reliable JSON parsing
-    - Token tracking enables cost monitoring per request
+    Wrapper around OpenAI API. Added retry because their rate limits
+    hit us during load testing - backoff pattern handles it gracefully.
     """
 
     def __init__(self, api_key: str):

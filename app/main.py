@@ -1,20 +1,3 @@
-"""
-main.py - FastAPI application entry point.
-
-This is the API layer that exposes AI capabilities as backend services.
-It demonstrates patterns directly relevant to the Mastercard Foundry R&D role:
-
-1. /api/analyze     - Integrates LLM for text analysis (structured JSON output)
-2. /api/documents   - Manages document ingestion into vector store
-3. /api/search      - Semantic similarity search over stored documents
-4. /api/rag         - Retrieval-Augmented Generation (search + LLM answer)
-5. /health          - Service health monitoring with dependency checks
-
-Architecture:
-    Client Request → FastAPI Router → Service Layer (LLM / Vector) → External APIs
-                                                                   → ChromaDB
-"""
-
 import logging
 import os
 from contextlib import asynccontextmanager
