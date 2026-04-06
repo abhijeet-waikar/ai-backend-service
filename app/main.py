@@ -260,3 +260,12 @@ def reset_collection():
 
     vector_service.reset_collection()
     return {"message": "All documents deleted", "total_documents": 0}
+
+#__ Insert data into the applicaiton ___________________________
+
+@app.post("/api/seed")
+async def seed_data():
+    """One-time endpoint to seed initial data into ChromaDB"""
+    from seed_data import run_seed   # or paste the logic inline
+    await run_seed()
+    return {"stored data into the application"}
