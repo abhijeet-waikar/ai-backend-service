@@ -175,6 +175,10 @@ def test_rag():
     else:
         print(f"Error: {response.status_code} - {response.text}")
 
+def run_seed(base_url: str = "http://localhost:8000"):
+    global API_URL
+    API_URL = base_url
+    seed_documents()
 
 if __name__ == "__main__":
     seed_documents()
