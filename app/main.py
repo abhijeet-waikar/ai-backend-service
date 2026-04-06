@@ -264,8 +264,11 @@ def reset_collection():
 #__ Insert data into the applicaiton ___________________________
 
 @app.post("/api/seed")
-async def seed_data():
+def seed_data():
     """One-time endpoint to seed initial data into ChromaDB"""
-    from seed_data import run_seed   # or paste the logic inline
-    await run_seed()
-    return {"stored data into the application"}
+    try:
+        from seed_data import run_seed
+        run_seed(base_url="http://localhost:8000")  # sync call, no await
+        return {"message": "Data seeded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
