@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ──────────────────────────────────────────────
 
-COLLECTION_NAME = "documents"
+from app.config import settings
 # ChromaDB uses its own embedding model by default (all-MiniLM-L6-v2)
 # In production, you'd use OpenAI embeddings or a custom model
 
@@ -26,11 +26,11 @@ class VectorService:
 
         # Get or create the collection
         self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME,
+            name=settings.CHROMA_COLLECTION,
             metadata={"description": "AI Backend Service document store"},
         )
         logger.info(
-            f"Collection '{COLLECTION_NAME}' ready. Documents: {self.collection.count()}"
+            f"Collection '{settings.CHROMA_COLLECTION}' ready. Documents: {self.collection.count()}"
         )
 
     def is_available(self) -> bool:
@@ -162,9 +162,9 @@ class VectorService:
 
     def reset_collection(self) -> None:
         """Delete all documents. Useful for testing."""
-        self.client.delete_collection(COLLECTION_NAME)
+        self.client.delete_collection(settings.CHROMA_COLLECTION)
         self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME,
+            name=settings.CHROMA_COLLECTION,
             metadata={"description": "AI Backend Service document store"},
         )
         logger.info("Collection reset - all documents deleted")
