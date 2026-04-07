@@ -16,8 +16,8 @@ from app.models import (
 )
 
 # ── Setup ──────────────────────────────────────────────────────
-
-load_dotenv()  # Load .env file for API keys
+from app.config import settings
+#load_dotenv()  # Load .env file for API keys
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     global llm_service, vector_service
 
     # Startup
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = settings.OPENAI_API_KEY
     if not api_key:
         logger.error("OPENAI_API_KEY not set. LLM features will be unavailable.")
         llm_service = None
@@ -67,7 +67,7 @@ app = FastAPI(
         "and vector similarity search. Demonstrates AI integration patterns "
         "for enterprise backend systems."
     ),
-    version="1.0.0",
+    version=settings.API_VERSION,
     lifespan=lifespan,
 )
 
@@ -93,7 +93,7 @@ def health_check():
         llm_service="connected" if llm_ok else "unavailable",
         vector_service="connected" if vector_ok else "unavailable",
         total_documents=doc_count,
-        version="1.0.0",
+        version=settings.API_VERSION,
     )
 
 

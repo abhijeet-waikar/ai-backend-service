@@ -14,10 +14,7 @@ from tenacity import (
 logger = logging.getLogger(__name__)
 
 # ── Configuration ──────────────────────────────────────────────
-
-MODEL = "gpt-4o-mini"  # Cost-effective model, good for most tasks
-MAX_TOKENS = 1000
-TEMPERATURE = 0.3  # Lower = more deterministic, better for structured output
+from app.config import settings
 
 
 class LLMService:
@@ -28,7 +25,7 @@ class LLMService:
 
     def __init__(self, api_key: str):
         self.client = OpenAI(api_key=api_key)
-        self.model = MODEL
+        self.model = settings.OPENAI_MODEL
         logger.info(f"LLM Service initialized with model: {self.model}")
 
     def is_available(self) -> bool:
@@ -88,8 +85,8 @@ Text to analyze:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=MAX_TOKENS,
-                temperature=TEMPERATURE,
+                max_tokens=settings.OPENAI_MAX_TOKENS,
+                temperature=settings.OPENAI_TEMPERATURE,
                 response_format={"type": "json_object"},
             )
 
@@ -148,8 +145,8 @@ Text to analyze:
             stream = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=MAX_TOKENS,
-                temperature=TEMPERATURE,
+                max_tokens=settings.OPENAI_MAX_TOKENS,
+                temperature=settings.OPENAI_TEMPERATURE,
                 stream=True,
             )
 
@@ -210,8 +207,8 @@ Answer based only on the above documents:"""
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            max_tokens=MAX_TOKENS,
-            temperature=TEMPERATURE,
+            max_tokens=settings.OPENAI_MAX_TOKENS,
+            temperature=settings.OPENAI_TEMPERATURE,
         )
 
         return {
