@@ -209,7 +209,7 @@ AI API calls can fail due to rate limits, network issues, or service outages. Re
 
 ## Author
 
-**Abhijeet Waikar** — Backend Engineer | GCP Certified | Building AI-integrated systems
+**Abhijeet Sandeep Waikar** — Backend Engineer | GCP Certified | Building AI-integrated systems
 
 - [LinkedIn](https://www.linkedin.com/in/abhijeet-waikar-developer)
 - [GitHub](https://github.com/abhijeet-waikar)
