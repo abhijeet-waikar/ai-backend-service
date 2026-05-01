@@ -4,6 +4,14 @@ A production-pattern backend service that integrates **LLM inference APIs** and 
 
 This project demonstrates how backend engineers can productionize AI capabilities — the same patterns used by teams building AI-powered features at companies like Mastercard, Google, and Amazon.
 
+## Live Demo
+**Endpoint:** https://ai-backend-asw-service.onrender.com/docs  
+> Free tier cold start: allow 30–60 seconds on first request.
+
+```bash
+# Quick test
+curl https://ai-backend-asw-service.onrender.com/health
+
 ---
 
 ## Architecture
