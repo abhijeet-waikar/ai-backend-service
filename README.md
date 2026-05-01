@@ -1,16 +1,8 @@
-# AI Backend Service
+# ai-backend-service
 
-A production-pattern backend service that integrates **LLM inference APIs** and **vector similarity search** into scalable REST endpoints. Built with **FastAPI**, **OpenAI**, and **ChromaDB**.
+A production-pattern FastAPI service that integrates LLM inference and vector similarity search into scalable REST endpoints. Built with FastAPI, OpenAI, and ChromaDB.
 
-This project demonstrates how backend engineers can productionize AI capabilities — the same patterns used by teams building AI-powered features at companies like Mastercard, Google, and Amazon.
-
-## Live Demo
-**Endpoint:** https://ai-backend-asw-service.onrender.com/docs  
-> Free tier cold start: allow 30–60 seconds on first request.
-
-```bash
-# Quick test
-curl https://ai-backend-asw-service.onrender.com/health
+> **Live demo cold start:** Deployed on Render free tier. First request after 15 minutes of inactivity takes 30–60 seconds. This is expected behaviour — the service spins down when idle.
 
 ---
 
@@ -18,46 +10,61 @@ curl https://ai-backend-asw-service.onrender.com/health
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    FastAPI Application                    │
-│                                                          │
-│  ┌──────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │  /health  │  │  /api/analyze │  │  /api/documents   │  │
-│  │          │  │  /api/rag     │  │  /api/search      │  │
-│  └──────────┘  └──────┬───────┘  └─────────┬─────────┘  │
-│                       │                     │            │
-│              ┌────────▼────────┐  ┌────────▼─────────┐  │
-│              │   LLM Service   │  │  Vector Service   │  │
-│              │                 │  │                   │  │
-│              │ - Retry logic   │  │ - Embeddings      │  │
-│              │ - Streaming     │  │ - Similarity      │  │
-│              │ - JSON output   │  │   search          │  │
-│              │ - Token tracking│  │ - CRUD ops        │  │
+│                    FastAPI Application                   │
+│                                                         │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ /health  │  │ /api/analyze │  │  /api/documents  │  │
+│  │          │  │ /api/rag     │  │  /api/search     │  │
+│  └──────────┘  └──────┬───────┘  └────────┬─────────┘  │
+│                       │                   │             │
+│              ┌────────▼────────┐  ┌───────▼──────────┐  │
+│              │   LLM Service   │  │  Vector Service  │  │
+│              │                 │  │                  │  │
+│              │ - Retry logic   │  │ - Embeddings     │  │
+│              │ - Streaming     │  │ - Similarity     │  │
+│              │ - JSON output   │  │   search         │  │
+│              │ - Token tracking│  │ - CRUD ops       │  │
 │              └────────┬────────┘  └────────┬─────────┘  │
-│                       │                     │            │
-└───────────────────────┼─────────────────────┼────────────┘
-                        │                     │
-                ┌───────▼───────┐    ┌───────▼────────┐
-                │  OpenAI API   │    │   ChromaDB      │
-                │  (gpt-4o-mini)│    │  (local/persist)│
-                └───────────────┘    └────────────────┘
+│                       │                   │             │
+└───────────────────────┼───────────────────┼─────────────┘
+                        │                   │
+                ┌───────▼───────┐   ┌───────▼────────┐
+                │  OpenAI API   │   │   ChromaDB     │
+                │ (gpt-4o-mini) │   │ (local/persist)│
+                └───────────────┘   └────────────────┘
 ```
+
+---
+
+## Engineering Decisions
+
+| Decision | Choice | Why |
+|---|---|---|
+| Async throughout | `async def` on all route handlers | LLM API calls are I/O-bound; blocking handlers would stall the entire event loop under concurrent requests |
+| Pydantic on every endpoint | Request + response models in `models.py` | Catches malformed inputs before they reach the LLM; doubles as live API documentation in Swagger |
+| ChromaDB local | In-process vector store | No external service dependency for a portfolio project; swap to Pinecone or Qdrant in production with one config change |
+| Provider abstraction | LLM calls isolated in `llm_service.py` | Route handlers never import OpenAI directly — swap provider without touching business logic |
+| Tenacity for retries | Exponential backoff on LLM calls | OpenAI returns 429 rate-limit errors under load; naive code fails silently; retry logic keeps the pipeline reliable |
+| Centralised config | `config.py` with env overrides | Same codebase runs in dev, staging, and production — no code changes, just different `.env` files |
+| Request timing middleware | `middleware.py` logs every request duration | LLM calls take 2–10 seconds; without latency tracking you cannot detect when OpenAI is degrading or when you need to scale |
+| Docker | `Dockerfile` with layered caching | `requirements.txt` copied before source code — pip install layer is cached unless dependencies change |
 
 ---
 
 ## What This Demonstrates
 
 | Pattern | Where | Why It Matters |
-|---------|-------|----------------|
-| **LLM API Integration** | `llm_service.py` | Calling inference APIs from backend services |
-| **Retry + Backoff** | `llm_service.py` | Handling rate limits and transient API failures |
-| **Streaming Responses** | `llm_service.py` | Real-time output for chat interfaces |
-| **Structured JSON Output** | `llm_service.py` | Reliable parsing of LLM responses |
-| **Vector Embeddings** | `vector_service.py` | Converting text to searchable vectors |
-| **Similarity Search** | `vector_service.py` | Finding documents by meaning, not keywords |
-| **RAG Pipeline** | `main.py /api/rag` | Grounding LLM answers in real data |
-| **Health Monitoring** | `main.py /health` | Production readiness with dependency checks |
-| **Batch Operations** | `vector_service.py` | Efficient bulk document ingestion |
-| **Pydantic Validation** | `models.py` | Type-safe request/response contracts |
+|---|---|---|
+| LLM API integration | `llm_service.py` | Calling inference APIs from a backend service |
+| Retry + backoff | `llm_service.py` | Handling rate limits and transient API failures |
+| Streaming responses | `llm_service.py` | Real-time output for chat interfaces |
+| Structured JSON output | `llm_service.py` | Reliable parsing of LLM responses |
+| Vector embeddings | `vector_service.py` | Converting text to searchable vectors |
+| Similarity search | `vector_service.py` | Finding documents by meaning, not keywords |
+| RAG pipeline | `main.py /api/rag` | Grounding LLM answers in real data |
+| Health monitoring | `main.py /health` | Production readiness with dependency checks |
+| Batch operations | `vector_service.py` | Efficient bulk document ingestion |
+| Pydantic validation | `models.py` | Type-safe request/response contracts |
 
 ---
 
@@ -67,12 +74,17 @@ curl https://ai-backend-asw-service.onrender.com/health
 ai-backend-service/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # FastAPI app with all endpoints
-│   ├── llm_service.py       # OpenAI integration (retry, streaming, JSON)
-│   ├── vector_service.py    # ChromaDB operations (embed, search, CRUD)
-│   └── models.py            # Pydantic schemas for all requests/responses
-├── seed_data.py             # Load sample documents + run tests
-├── requirements.txt         # Python dependencies
+│   ├── main.py              # FastAPI app — all route definitions
+│   ├── llm_service.py       # OpenAI integration: retry, streaming, JSON output
+│   ├── vector_service.py    # ChromaDB: embed, search, CRUD
+│   ├── models.py            # Pydantic schemas for all request/response types
+│   ├── config.py            # Centralised settings with env variable overrides
+│   └── middleware.py        # Request timing and structured logging
+├── seed_data.py             # Load sample documents and run smoke tests
+├── inspect_db.py            # Inspect ChromaDB contents during development
+├── test_service.py          # Integration tests for all endpoints
+├── Dockerfile               # Container build with layered cache optimisation
+├── requirements.txt
 ├── .env.example             # Template for API key configuration
 ├── .gitignore
 └── README.md
@@ -80,144 +92,121 @@ ai-backend-service/
 
 ---
 
-## Quick Start (Mac)
+## Quick Start
 
-### 1. Clone and setup
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/abhijeet-waikar/ai-backend-service.git
 cd ai-backend-service
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure API key
+### 2. Configure
 
 ```bash
 cp .env.example .env
-# Edit .env and add your OpenAI API key
-# Get one at: https://platform.openai.com/api-keys
+# Add your OPENAI_API_KEY — get one at https://platform.openai.com/api-keys
 ```
 
-### 3. Start the server
+### 3. Run
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-You should see:
-```
-INFO | LLM Service started
-INFO | Vector Service started
-INFO | Application startup complete.
-```
+API docs: **http://localhost:8000/docs**
 
-### 4. Load sample data and test
+### 4. Load sample data
 
-In a new terminal:
 ```bash
-source venv/bin/activate
 python seed_data.py
 ```
 
-### 5. Explore the API
+### 5. Run with Docker
 
-Open **http://localhost:8000/docs** in your browser for the interactive Swagger UI.
+```bash
+docker build -t ai-backend-service .
+docker run -p 8000:8000 --env-file .env ai-backend-service
+```
 
 ---
 
 ## API Endpoints
 
-### Health Check
+**Health check**
 ```bash
 curl http://localhost:8000/health
 ```
 
-### Analyze Text (LLM)
+**Analyze text (LLM)**
 ```bash
 curl -X POST http://localhost:8000/api/analyze \
   -H "Content-Type: application/json" \
-  -d '{
-    "text": "Mastercard reported Q3 revenue growth of 13%, driven by strong cross-border volumes and value-added services expansion.",
-    "instruction": "Summarize the key financial takeaways"
-  }'
+  -d '{"text": "Revenue grew 13% driven by cross-border volumes.", "instruction": "Summarise the key financial takeaways"}'
 ```
 
-### Add Document
+**Add document**
 ```bash
 curl -X POST http://localhost:8000/api/documents \
   -H "Content-Type: application/json" \
-  -d '{
-    "content": "Contactless payments grew 40% year-over-year in emerging markets.",
-    "metadata": {"source": "quarterly_report", "year": 2024}
-  }'
+  -d '{"content": "Contactless payments grew 40% year-over-year.", "metadata": {"source": "quarterly_report", "year": 2024}}'
 ```
 
-### Semantic Search
+**Semantic search**
 ```bash
 curl -X POST http://localhost:8000/api/search \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "How is AI used in fraud prevention?",
-    "top_k": 3
-  }'
+  -d '{"query": "How is AI used in fraud prevention?", "top_k": 3}'
 ```
 
-### RAG Query (Search + LLM Answer)
+**RAG query (retrieval + LLM answer)**
 ```bash
 curl -X POST http://localhost:8000/api/rag \
   -H "Content-Type: application/json" \
-  -d '{
-    "question": "What role does generative AI play in customer service for payments?",
-    "top_k": 3
-  }'
+  -d '{"question": "What role does generative AI play in customer service?", "top_k": 3}'
 ```
 
 ---
 
-## Key Concepts Explained
+## Key Concepts
 
-### What is RAG (Retrieval-Augmented Generation)?
+**RAG (Retrieval-Augmented Generation)** solves the core LLM problem of hallucination and knowledge cutoff. Instead of asking the model to recall facts from training, RAG retrieves relevant documents from your own data and injects them into the prompt as grounding context. This is the dominant pattern in production enterprise AI today.
 
-RAG solves a fundamental LLM problem: models have a knowledge cutoff and can hallucinate. RAG grounds the model's answers in your actual data:
+**Vector embeddings** convert text into numerical arrays that encode semantic meaning. Similar meanings produce similar vectors. This enables search by concept rather than exact keyword — "payment fraud" and "transaction security" return the same results even though they share no words.
 
-1. **User asks a question**
-2. **Retrieval**: Vector search finds the most relevant documents from your database
-3. **Augmentation**: Those documents are injected into the LLM prompt as context
-4. **Generation**: The LLM generates an answer using ONLY the provided context
-
-This is the #1 pattern in enterprise AI applications today.
-
-### What are Vector Embeddings?
-
-Text embeddings convert words into numerical vectors (arrays of numbers) that capture semantic meaning. Similar meanings = similar vectors. This enables searching by meaning rather than exact keyword matching.
-
-### Why Retry with Exponential Backoff?
-
-AI API calls can fail due to rate limits, network issues, or service outages. Retry with exponential backoff (wait 1s, then 2s, then 4s) handles transient failures gracefully without overwhelming the API.
+**Exponential backoff** is not optional for LLM APIs. Under load, OpenAI returns 429 rate-limit errors. A service that does not retry will fail silently and return errors to users. Tenacity handles the retry loop, backoff timing, and max attempt limit so the route handler stays clean.
 
 ---
 
 ## Tech Stack
 
-- **Python 3.11+** - Backend language
-- **FastAPI** - High-performance async web framework
-- **OpenAI API** - LLM inference (gpt-4o-mini)
-- **ChromaDB** - Local vector database for embeddings and similarity search
-- **Pydantic** - Data validation and serialization
-- **Tenacity** - Retry logic with exponential backoff
-- **Uvicorn** - ASGI server
+| Component | Technology |
+|---|---|
+| Framework | FastAPI + Uvicorn |
+| Language | Python 3.11 |
+| LLM | OpenAI gpt-4o-mini |
+| Vector DB | ChromaDB (local, persistent) |
+| Validation | Pydantic v2 |
+| Retry | Tenacity |
+| Container | Docker |
+| Deployment | Render |
+
+---
+
+## Roadmap
+
+- [ ] Ragas evaluation metrics (faithfulness, answer relevancy scores)
+- [ ] Semantic caching — skip LLM call for near-duplicate questions
+- [ ] Streaming responses via SSE
+- [ ] Swap ChromaDB → Qdrant for production-grade ANN search
 
 ---
 
 ## Author
 
-**Abhijeet Sandeep Waikar** — Backend Engineer | GCP Certified | Building AI-integrated systems
+**Abhijeet Waikar** — Senior Software Engineer | Java · Python · GCP
+11 years building production data platforms. Transitioning into AI backend engineering — building LLM-integrated systems on GitHub.
 
-- [LinkedIn](https://www.linkedin.com/in/abhijeet-waikar-developer)
-- [GitHub](https://github.com/abhijeet-waikar)
+[LinkedIn](https://linkedin.com/in/abhijeet-waikar-developer) · [GitHub](https://github.com/abhijeet-waikar)
